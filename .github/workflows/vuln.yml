@@ -177,5 +177,5 @@ jobs:
           #           Hi Team,
           #           The recent vulnerability scan for the repository ${{ github.repository }} has completed. 
                    
-
+            # good to go
 
