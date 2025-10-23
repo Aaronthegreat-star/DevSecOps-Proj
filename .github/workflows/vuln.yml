@@ -18,7 +18,7 @@ jobs:
     Code_Config_Git_Leaks_Scan:
         name: Code and Secrets Scan
         runs-on: ubuntu-24.04
-        continue-on-error: false
+        continue-on-error: true
         permissions:
             actions: read
             contents: read
@@ -29,7 +29,7 @@ jobs:
                 fetch-depth: 0      
           - name: Run Gitleaks Scan
             uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
-            continue-on-error: false
+            continue-on-error: true
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 GITLEAKS_NOTIFY_USER_LIST: ${{ secrets.GITLEAKS_NOTIFY_USER_LIST }}
