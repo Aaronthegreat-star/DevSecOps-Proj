@@ -142,33 +142,23 @@ jobs:
         #         snyk monitor --all-projects --severity-threshold=high --json > snyk-monitor-report.json || true
         #         snyk code test --json > snyk-code-report.json || true
             #  env:
-            #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+            #     SNYK_TOKEN: ${{ env.SNYK }}
 
-           - name: Upload Snyk Reports
-             uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-             with:
-                name: snyk-reports-${{ github.run_number }}
-                path: |
-                 snyk-test-report.json
-                 snyk-code-report.json
-                #  snyk-monitor-report.json
-                retention-days: 30
-          
-           - name: Send mail 
-             if: failure()
-             uses: dawidd6/action-send-mail@6d98ae34d733f9a723a9e04e94f2f24ba05e1402
-             with:
-                server_address: ${{ secrets.MAIL_SERVER}}
-                server_port: '587'
-                username: ${{ secrets.MAIL_USERNAME }}
-                password: ${{ secrets.MAIL_PASSWORD }}
-                subject: Vulnerability Scan Report for ${{ github.repository }}
-                to: ${{ secrets.MAIL_TO }}
-                 snyk test  --org=${{ secrets.snykOrg }} --all-projects --severity-threshold=high --json > snyk-test-report.json || true
-                body: |
-                    Hi Team,
-                    The recent vulnerability scan for the repository ${{ github.repository }} has completed. Please find the attached reports for detailed insights.
-                    Best Regards,
-                    Security Team.
+       
+       
+          #  - name: Send mail 
+          #    if: failure()
+          #    uses: dawidd6/action-send-mail@6d98ae34d733f9a723a9e04e94f2f24ba05e1402
+          #    with:
+          #      server_address: ${{ secrets.MAIL_SERVER }}
+          #      server_port: '587'
+          #      username: ${{ secrets.MAIL_USERNAME }}
+          #      password: ${{ secrets.MAIL_PASSWORD }}
+          #      subject: Vulnerability Scan Report for ${{ github.repository }}
+          #      to: ${{ secrets.MAIL_
+          #      body: |
+          #           Hi Team,
+          #           The recent vulnerability scan for the repository ${{ github.repository }} has completed. 
+                   
 
 
