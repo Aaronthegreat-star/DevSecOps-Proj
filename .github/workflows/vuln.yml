@@ -74,33 +74,47 @@ jobs:
         name: Comprehensive Vulnerability Scan with Snyk
         steps:
            - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+           - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+             with:
+              python-version: '3.13'
+
+           - name: Install Python dependencies
+             run: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+
            - name: Run Snyk Open Source Scan
              uses: snyk/actions/python@master
              with:
-               args: --severity-threshold=high --json-file-output=snyk-open-source-report.json
+              args: --severity-threshold=high --json-file-output=snyk-open-source-report.json
              env:
-                SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-           
+              SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
            - name: Upload Snyk Reports
              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
              with:
-                name: snyk-reports-${{ github.run_number }}
-                path: |
-                 snyk-open-source-report.json
-                retention-days: 30
+              name: snyk-reports-${{ github.run_number }}
+              path: snyk-open-source-report.json
+              retention-days: 30
 
            - uses: snyk/actions/setup@master
              id: snyk
              with:
-                snyk-version: v1.391.0
-           - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
-             with:
-               python-version: '3.13'
+              snyk-version: v1.391.0
+
            - name: Snyk SAST Scan
-             run: |
-                snyk code test --json > snyk-code-report.json
+             run: snyk code test --json > snyk-code-report.json
              env:
-                SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+               SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+           - name: Upload Snyk SAST Report
+             uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+             with:
+              name: snyk-code-reports-${{ github.run_number }}
+              path: snyk-code-report.json
+              retention-days: 30
+
 
            - name: Slack Notification
              uses: rtCamp/action-slack-notify@v2
