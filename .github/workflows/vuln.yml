@@ -92,17 +92,17 @@ jobs:
 
            - name: Run Snyk Open Source Scan
              uses: snyk/actions/python@master
-             with:
-              args: --severity-threshold=high --json-file-output=snyk-open-source-report.json
+            #  with:
+            #   args: --severity-threshold=high --json-file-output=snyk-open-source-report.json
              env:
               SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-           - name: Upload Snyk Reports
-             uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-             with:
-              name: snyk-reports-${{ github.run_number }}
-              path: snyk-open-source-report.json
-              retention-days: 30
+          #  - name: Upload Snyk Reports
+          #    uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          #    with:
+          #     name: snyk-reports-${{ github.run_number }}
+          #     path: snyk-open-source-report.json
+          #     retention-days: 30
 
            - uses: snyk/actions/setup@master
              id: snyk
