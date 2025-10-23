@@ -84,6 +84,16 @@ jobs:
           #    run: |
           #     sudo apt-get update
           #     sudo apt-get install -y libpq-dev gcc
+           - name: Setup Snyk
+             uses: snyk/actions/setup@master
+             env:
+              SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+           - name: Snyk SAST Scan
+             run: snyk code test --json > snyk-results.json || true
+             env:
+              SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
 
            - name: Install Python dependencies
              run: |
@@ -109,15 +119,15 @@ jobs:
           #    with:
           #     snyk-version: v1.391.0
 
-           - name: Setup Snyk
-             uses: snyk/actions/setup@master
-             env:
-              SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          #  - name: Setup Snyk
+          #    uses: snyk/actions/setup@master
+          #    env:
+          #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-           - name: Snyk SAST Scan
-             run: snyk code test --json > snyk-results.json || true
-             env:
-              SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          #  - name: Snyk SAST Scan
+          #    run: snyk code test --json > snyk-results.json || true
+          #    env:
+          #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
            - name: Upload Snyk SAST Report
              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
