@@ -126,11 +126,8 @@ jobs:
              uses: rtCamp/action-slack-notify@v2
              env:
                SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-               SLACK_CHANNEL: general
-               SLACK_MESSAGE: |
-                       The workflow has *${{ job.status }}*!
-                       View the run details here:
-                               ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+               SLACK_CHANNEL: aaron1
+               SLACK_MESSAGE: "Kindly check the workflow"
              if: always()
             
           #  - name: Run Snyk Code Scan
