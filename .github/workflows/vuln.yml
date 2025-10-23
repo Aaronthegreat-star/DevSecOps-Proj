@@ -26,7 +26,7 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
             with:
-                fetch-depth: 1       
+                fetch-depth: 0      
           - name: Run Gitleaks Scan
             uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
             continue-on-error: false
