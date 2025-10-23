@@ -11,78 +11,130 @@ on:
 
   workflow_dispatch:
 
-env:
-    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+# env:
+#     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
 jobs:
     Code_Config_Git_Leaks_Scan:
         name: Code and Secrets Scan
         runs-on: ubuntu-24.04
         continue-on-error: false
-        # permissions:
-        #     actions: read
-        #     contents: read
+        permissions:
+            actions: read
+            contents: read
         steps:
           - name: Checkout code
             uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
             with:
-                fetch-depth: 0
-         
+                fetch-depth: 1       
           - name: Run Gitleaks Scan
             uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+            continue-on-error: false
             env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 GITLEAKS_NOTIFY_USER_LIST: ${{ secrets.GITLEAKS_NOTIFY_USER_LIST }}
-          
+          - name: Log in to Docker Hub
+            uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+            with:
+              username: ${{ secrets.DOCKER_USERNAME }}
+              password: ${{ secrets.DOCKERHUB_TOKEN }}
           - name: Build an image from the existing Dockerfile
             run: |
              docker build --file Dockerfile -t vuln.app:${{ github.sha }} .
-
           - name: Run Trivy Vulnerability Scan
             uses: aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1
             with:
-                image-ref: vuln.app:${{ github.sha }}
+                image-ref: 'vuln.app:${{ github.sha }}'
                 format: 'table'
                 exit-code: '1'
                 ignore-unfixed: true
                 severity: 'HIGH,CRITICAL'
                 vulnerability-type: 'os, library'
-              
+                
+            # uses: aquasecurity/trivy-action@v1
+            # with:
+            #     image-ref: 'vuln.app:${{ github.sha }}'
+            #     format: 'json'
+            #     output: 'trivy-report.json'
+            #     exit-code: '1'
+            #     ignore-unfixed: true
+            #     severity: 'HIGH,CRITICAL'
+            #     vulnerability-type: 'os,library'
 
-          - name: Upload Vulnerability Scan Results
-            uses: actions/upload-artifact@v4
-            with:
-              name: trivy-report
-              path: trivy-report.json
-              retention-days: 30
+          # - name: Upload Vulnerability Scan Results
+          #   uses: actions/upload-artifact@v4
+          #   with:
+          #     name: trivy-report
+          #     path: trivy-report.json
+          #     retention-days: 30
 
     Comprehensive_Security_Scan:
         runs-on: ubuntu-24.04
-        env:
-           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        needs: Code_Config_Git_Leaks_Scan
+        name: Comprehensive Vulnerability Scan with Snyk
         steps:
            - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-           - uses: snyk/actions/setup@master
+           - name: Run Snyk Open Source Scan
+             uses: snyk/actions/python@master
              with:
-              snyk-version: v1.1299.1
+               args: --severity-threshold=high --json-file-output=snyk-open-source-report.json
+             env:
+                SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+           
+           - name: Upload Snyk Reports
+             uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+             with:
+                name: snyk-reports-${{ github.run_number }}
+                path: |
+                 snyk-open-source-report.json
+                retention-days: 30
+
+           - uses: snyk/actions/setup@master
+             id: snyk
+             with:
+                snyk-version: v1.391.0
            - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
              with:
-              python-version: '3.13'
-              cache: 'pip'
-           - name: Cache Snyk Data
-             uses: actions/cache@v4
-             with:
-                path: ~/.cache/snyk
-                key: snyk-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
-
-           - name: Snyk SAST Python
+               python-version: '3.13'
+           - name: Snyk SAST Scan
              run: |
-                 snyk code test ./ai_agent_deepseek.py ./app.py ./auth.py ./database.py  --org=${{ secrets.snykOrg }} --json > snyk-code-report.json || true
+                snyk code test --json > snyk-code-report.json
+             env:
+                SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-           - name: Snyk SCA Python
-             run: |
-                 pip3 install -r requirements.txt
-                 snyk test requirements.txt --org=${{ secrets.snykOrg }} --all-projects --severity-threshold=high --json > snyk-test-report.json || true
+           - name: Slack Notification
+             uses: rtCamp/action-slack-notify@v2
+             env:
+               SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+               SLACK_CHANNEL: general
+               SLACK_MESSAGE: |
+                       The workflow has *${{ job.status }}*!
+                       View the run details here:
+                               ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+             if: always()
+            
+          #  - name: Run Snyk Code Scan
+          #    uses: 
+          #  - uses: snyk/actions/setup@master
+          #    with:
+          #     snyk-version: v1.1299.1
+          #  - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+          #    with:
+          #     python-version: '3.13'
+          #     cache: 'pip'
+          #  - name: Cache Snyk Data
+          #    uses: actions/cache@v4
+          #    with:
+          #       path: ~/.cache/snyk
+          #       key: snyk-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+          #  - name: Snyk SAST Scan
+          #    run: |
+          #        git ls-files '*.py' | xargs --no-run-if-empty snyk code test
+          #        snyk code test ./ai_agent_deepseek.py ./app.py ./auth.py ./database.py  --org=${{ secrets.snykOrg }} --json > snyk-code-report.json || true
+          #  - name: Snyk SCA Scan
+          #    run: |
+          #        pip3 install -r requirements.txt
+          #        snyk test requirements.txt --org=${{ secrets.snykOrg }} --all-projects --severity-threshold=high --json > snyk-test-report.json || true
 
         #    - name: Snyk test && monitor
         #      run: |
